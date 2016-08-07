@@ -3,7 +3,7 @@ open System.Collections.Concurrent
 
 type ICache<'TKey, 'TValue> =
     abstract TryGet : 'TKey -> 'TValue option
-    abstract Get : (unit -> 'TValue) -> 'TKey -> 'TValue
+    abstract Get : (unit -> 'TValue * TimeSpan) -> 'TKey -> 'TValue
     abstract Set : TimeSpan -> 'TKey -> 'TValue -> unit
 
 type InMemoryCache<'TKey, 'TValue> (concurrentDict: ConcurrentDictionary<'TKey, ('TValue * DateTimeOffset)>) =
@@ -13,9 +13,13 @@ type InMemoryCache<'TKey, 'TValue> (concurrentDict: ConcurrentDictionary<'TKey, 
             | true, (o, expiryTimestamp) when DateTimeOffset.UtcNow <= expiryTimestamp -> Some o 
             | _ -> None 
         member this.Get getter key =
-            match (this :> ICache<'TKey, 'TValue>).TryGet key with
+            let cache = this :> ICache<'TKey, 'TValue>
+            match cache.TryGet key with
             | Some o -> o 
-            | None -> getter ()
+            | None -> 
+                let result, timeSpan = getter ()
+                cache.Set timeSpan key result
+                result
         member this.Set expiry key value =
             concurrentDict.[key] <- (value, DateTimeOffset.UtcNow + expiry)
 
@@ -28,4 +32,4 @@ TimeSpan.FromSeconds 2.
 |> testCache.Set <||
 ("testKey", "testValue")
 
-let cacheValue = testCache.TryGet "testKey"
+let cacheValue = testCache.Get (fun _ -> "testValue2", TimeSpan.FromSeconds 2.) "testKey"
