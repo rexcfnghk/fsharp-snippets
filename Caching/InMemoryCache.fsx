@@ -8,19 +8,19 @@ type ICache<'TKey, 'TValue> =
 
 type InMemoryCache<'TKey, 'TValue> (concurrentDict: ConcurrentDictionary<'TKey, ('TValue * DateTimeOffset)>) =
     interface ICache<'TKey, 'TValue> with
-        member this.TryGet key =
+        member __.TryGet key =
             match concurrentDict.TryGetValue key with
             | true, (o, expiryTimestamp) when DateTimeOffset.UtcNow <= expiryTimestamp -> Some o 
             | _ -> None 
-        member this.Get getter key =
-            let cache = this :> ICache<'TKey, 'TValue>
+        member __.Get getter key =
+            let cache = __ :> ICache<'TKey, 'TValue>
             match cache.TryGet key with
             | Some o -> o 
             | None -> 
                 let result, timeSpan = getter ()
                 cache.Set timeSpan key result
                 result
-        member this.Set expiry key value =
+        member __.Set expiry key value =
             concurrentDict.[key] <- (value, DateTimeOffset.UtcNow + expiry)
 
 let testCache = 
@@ -30,6 +30,6 @@ let testCache =
 
 TimeSpan.FromSeconds 2.
 |> testCache.Set <||
-("testKey", "testValue")
+    ("testKey", "testValue")
 
 let cacheValue = testCache.Get (fun _ -> "testValue2", TimeSpan.FromSeconds 2.) "testKey"
