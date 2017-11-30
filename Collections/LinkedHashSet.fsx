@@ -4,8 +4,8 @@ open System.Collections.Generic
 
 type LinkedHashSet<'a when 'a : equality> () =
     let mutable index = 0
-    let indexed = SortedDictionary<int, 'a> ()
-    let hash = HashSet<'a> ()
+    let indexed = SortedDictionary ()
+    let hash = HashSet ()
     let theLock = obj ()
 
     interface ICollection<'a> with
@@ -50,8 +50,7 @@ type LinkedHashSet<'a when 'a : equality> () =
                 if not <| hash.Remove e
                 then false
                 else
-                    let kvps = indexed :> seq<KeyValuePair<int, 'a>>
-                    match Seq.tryFind predicate kvps with
+                    match Seq.tryFind predicate indexed with
                     | Some x -> indexed.Remove x.Key
                     | None -> false
             )
