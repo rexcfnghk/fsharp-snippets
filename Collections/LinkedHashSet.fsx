@@ -30,12 +30,12 @@ type LinkedHashSet<'a when 'a : equality> (elements) as this =
         member __.Contains e =
             lock theLock (fun () -> hash.Contains e)
         member __.CopyTo (array, arrayIndex) =
+            let copyValues (xs: 'a[]) = xs.CopyTo (array, arrayIndex)
             lock theLock (fun () ->
-                let kvps = 
-                    Seq.toArray indexed
-                let kvpLength = Array.length kvps            
-                for i in arrayIndex..kvpLength - 1 do
-                    array.[i - arrayIndex] <- kvps.[i].Value
+                indexed
+                |> Seq.map (fun i -> i.Value)
+                |> Seq.toArray
+                |> copyValues
             )            
         member __.GetEnumerator () =
             let values = lock theLock (fun () ->
