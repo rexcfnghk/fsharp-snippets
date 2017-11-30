@@ -3,12 +3,12 @@ open System.Collections
 open System.Collections.Generic
 
 type LinkedHashSet<'a when 'a : equality> (elements) as this =
-    do Seq.iter (this :> ICollection<'a>).Add elements    
     let mutable index = 0
     let indexed = SortedDictionary ()
     let hash = HashSet ()
     let theLock = obj ()
 
+    do Seq.iter (this :> ICollection<'a>).Add elements
     new () = LinkedHashSet Seq.empty    
 
     interface ICollection<'a> with
