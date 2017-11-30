@@ -44,12 +44,14 @@ type LinkedHashSet<'a when 'a : equality> () =
             (this :> IEnumerable<'a>).GetEnumerator ()
             :> IEnumerator
         member __.Remove e =
+            let predicate (kvp: KeyValuePair<int, 'a>) = 
+                kvp.Value = e
             lock theLock (fun () ->
-                if hash.Remove e
-                then
+                if not <| hash.Remove e
+                then false
+                else
                     let kvps = indexed :> seq<KeyValuePair<int, 'a>>
-                    match Seq.tryFind (fun (kvp: KeyValuePair<int, 'a>) -> kvp.Value = e) kvps with
+                    match Seq.tryFind predicate kvps with
                     | Some x -> indexed.Remove x.Key
                     | None -> false
-                else false
             )
